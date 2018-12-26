@@ -1,0 +1,52 @@
+Description: 'This template deploys a VPC, with a pair of public and private subnets
+  spread across two Availabilty Zones. It deploys an Internet Gateway, with a default
+  route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ),
+  and default routes for them in the private subnets.
+
+  '
+Parameters:
+  CodeBuildContainerSpringBootDocker:
+    Default: aws/codebuild/java:openjdk-8
+    Description: Codebuild custom container to run maven build for java, build docker
+      container and push to ECR
+    Type: String
+  KeyPair:
+    Description: Amazon EC2 Key Pair for SSH
+    Type: AWS::EC2::KeyPair::KeyName
+  TeamName:
+    Description: Name of team or personnel that created this stack
+    Type: String
+Resources:
+  ALB:
+    DependsOn: ECSCluster
+    Properties:
+      Parameters:
+        ElbSecurityGroup:
+          Fn::GetAtt:
+          - ECSCluster
+          - Outputs.ElbSecurityGroup
+        EnvironmentName:
+          Fn::Sub: ${AWS::StackName}-${TeamName}
+        PubELBSubnets:
+          Fn::GetAtt:
+          - ECSCluster
+          - Outputs.PubELBSubnets
+        VpcId:
+          Fn::GetAtt:
+          - ECSCluster
+          - Outputs.VpcId
+      TemplateURL: https://s3.amazonaws.com/sb1-trial-cf-bucket/5a817b78fe4756bd1e2ad5156d4975f6.template
+    Type: AWS::CloudFormation::Stack
+  ECSCluster:
+    Properties:
+      Parameters:
+        AsgMaxSize: 2
+        EcsClusterName:
+          Fn::Sub: ${AWS::StackName}-EcsCluster-${TeamName}
+        EcsInstanceType: t2.small
+        EnvironmentName:
+          Fn::Sub: ${AWS::StackName}-${TeamName}
+        KeyName:
+          Ref: KeyPair
+      TemplateURL: https://s3.amazonaws.com/sb1-trial-cf-bucket/2f915b1f0a269e2ab44062b111edea0f.template
+    Type: AWS::CloudFormation::Stack

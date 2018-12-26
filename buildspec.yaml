@@ -1,0 +1,26 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+    - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+    - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+    - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+  build:
+    commands:
+    - echo Build started on `date`
+    - mvn clean install --debug
+    - docker build --tag "$IMAGE_URI" .
+  post_build:
+    commands:
+    - printenv
+    - echo Build completed on `date`
+    - echo $(docker images)
+    - echo Pushing docker image
+    - docker push "$IMAGE_URI"
+    - echo push completed
+    - printf '{"tag":"%s"}' $TAG > build.json
+    - cat service-cf.yaml > service-def.yaml
+artifacts:
+  files:
+  - service-def.yaml
+  - build.json

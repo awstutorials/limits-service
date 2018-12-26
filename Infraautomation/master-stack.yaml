@@ -1,0 +1,72 @@
+Description: >
+    This template deploys a VPC, with a pair of public and private subnets spread
+    across two Availabilty Zones. It deploys an Internet Gateway, with a default
+    route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ),
+    and default routes for them in the private subnets.
+
+Parameters:
+
+    CodeBuildContainerSpringBootDocker:
+        Description: Codebuild custom container to run maven build for java, build docker container and push to ECR
+        Type: String
+        Default: aws/codebuild/java:openjdk-8
+    KeyPair:
+        Description: Amazon EC2 Key Pair for SSH
+        Type: "AWS::EC2::KeyPair::KeyName"
+    TeamName:
+        Description: Name of team or personnel that created this stack
+        Type: String
+
+Resources:
+    # with default vpc - this is working
+    # ECSCluster:
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: !Sub https://s3-${AWS::Region}.amazonaws.com/${InfraAutomationCfnBucket}/ecs-cluster.yaml
+    #         Parameters:
+    #             EcsClusterName: !Sub "${AWS::StackName}-ECSCluster"
+    #             EcsInstanceType: "m4.xlarge"
+    #             AsgMaxSize: 2
+    #             VpcId: 'vpc-fd250e99'
+    #             SubnetIds: 'subnet-a618faef,subnet-03d82664'
+    #             VpcAvailabilityZones: 'ap-southeast-1a,ap-southeast-1b'
+    #             EnvironmentName: !Ref AWS::StackName
+    #             KeyName: "mysshkey"
+
+    #to create new vpc in 2AZ Reg.
+    ECSCluster:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: ./VPC-ECS-2AZ.yaml
+            Parameters:
+                EcsClusterName: !Sub ${AWS::StackName}-EcsCluster-${TeamName}
+                EcsInstanceType: "t2.small"
+                AsgMaxSize: 2
+                EnvironmentName: !Sub ${AWS::StackName}-${TeamName}
+                KeyName: !Ref KeyPair
+
+    ALB:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: ECSCluster
+        Properties:
+            TemplateURL: ./ALB.yaml
+            Parameters:
+                EnvironmentName: !Sub ${AWS::StackName}-${TeamName}
+                VpcId: !GetAtt ECSCluster.Outputs.VpcId
+                PubELBSubnets: !GetAtt ECSCluster.Outputs.PubELBSubnets
+                ElbSecurityGroup: !GetAtt ECSCluster.Outputs.ElbSecurityGroup
+
+    # # pipelines for microservices
+    # CodePipelineSystem:
+    #     Type: AWS::CloudFormation::Stack
+    #     Properties:
+    #         TemplateURL: ./Pipeline.yaml
+    #         Parameters:
+    #             EnvironmentName: !Sub ${AWS::StackName}-${TeamName}
+    #             CodeCommitRepo: "springboot-sample"
+    #             MicroServiceName: "spring-sample"
+    #             CodeBuildContainerSpringBootDocker: !Ref CodeBuildContainerSpringBootDocker
+    #             VpcId: !GetAtt ECSCluster.Outputs.VpcId
+    #             ALBListener: !GetAtt ALB.Outputs.ALBListener
+    #             ECSCluster: !GetAtt ECSCluster.Outputs.ECSCluster
+    #             ECRRepositoryBaseName: !Ref TeamName

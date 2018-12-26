@@ -1,0 +1,7 @@
+{
+    "count": "1",
+    "memory": "768",
+    "port": "8080",
+    "path": "/limits/*",
+    "priority": "23"
+}
