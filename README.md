@@ -18,6 +18,7 @@ Virtual Private Cloud (VPC) is a way provided by AWS to isolate your infrastruct
 Internet Gateway as the name implies allows systems within VPC to connect to Internet. 
 
 ### NAT Gateway
+You can use a network address translation (NAT) gateway to enable instances in a private subnet to connect to the internet or other AWS services, but prevent the internet from initiating a connection with those instances
 
 ### Availability Zones
 AWS services are available in multiple regions and each region has few availability zones. An availability zone is a physically seperate datacenter with in the region to enable disaster recovery. This is setup this way to enable customers to keep their data in their region and also to provide disaster recovery. It is important to choose a region closer to your current location for better performance.
@@ -47,7 +48,75 @@ Using CloudFormation to deploy and manage services with ECS has a number of nice
 
 ### Understand the Microservice
 
-This Microservice is a simple limit-service created from the previous articles. You can run this service locally and it will show the limits. Now to scale this microservice or to deploy this in AWS, we need to prepare the microservice by Containerizing it. To containerize a Microservice all you need to do is crate a Dockerfile.
+This Microservice is a simple limit-service created from the previous articles. 
+
+```
+package com.in28minutes.microservices.limitsservice;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.in28minutes.microservices.limitsservice.bean.LimitConfiguration;
+
+@RestController
+public class LimitsConfigurationController {
+
+	@Autowired
+	private Configuration configuration;
+
+	@GetMapping("/limits")
+	public LimitConfiguration retrieveLimitsFromConfigurations() {
+		LimitConfiguration limitConfiguration = new LimitConfiguration(configuration.getMaximum(), 
+				configuration.getMinimum());
+		return limitConfiguration;
+	}
+
+}
+```
+Configuration.java
+
+```
+package com.in28minutes.microservices.limitsservice;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component
+@ConfigurationProperties("limits-service")
+public class Configuration {
+	
+	private int minimum;
+	private int maximum;
+
+	public void setMinimum(int minimum) {
+		this.minimum = minimum;
+	}
+
+	public void setMaximum(int maximum) {
+		this.maximum = maximum;
+	}
+
+	public int getMinimum() {
+		return minimum;
+	}
+
+	public int getMaximum() {
+		return maximum;
+	}
+
+}
+```
+application.properties
+
+```
+spring.application.name=limits-service
+limits-service.minimum=10
+limits-service.maximum=100
+```
+
+
+You can run this service locally and it will show the limits. Now to scale this microservice or to deploy this in AWS, we need to prepare the microservice by Containerizing it. To containerize a Microservice all you need to do is crate a Dockerfile.
 
 ```
 FROM frolvlad/alpine-oraclejdk8:slim
@@ -58,10 +127,10 @@ ENV JAVA_OPTS=""
 ENTRYPOINT [ "sh", "-c", "java -jar /app.jar" ]
 
 ```
-Line 1: Pick up a image from the docker repository with name frolvlad/alpine-oraclejdk8:slim
-Line 2: Create a volume called /tmp inside the image
-Line 3: Copy the limits-service-0.0.1-SNAPSHOT.jar and rename it to app.jar
-Line 6: Command to run this container ie. sh -c java -jar /app.jar
+1. Line 1: Pick up a image from the docker repository with name frolvlad/alpine-oraclejdk8:slim
+2. Line 2: Create a volume called /tmp inside the image
+3. Line 3: Copy the limits-service-0.0.1-SNAPSHOT.jar and rename it to app.jar
+4. Line 6: Command to run this container ie. sh -c java -jar /app.jar
 
 ### Creating a buildspec file
 
@@ -243,6 +312,7 @@ Outputs:
 1. [Fork](https://github.com/awstutorials/limits-service) this GitHub repository.
 2. Clone the forked GitHub repository to your local machine.
 3. Modify the pipeline template and import the pipeline in the cloudformation
+
 ```
   BranchName:
     Description: GitHub branch name

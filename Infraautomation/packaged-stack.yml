@@ -35,7 +35,7 @@ Resources:
           Fn::GetAtt:
           - ECSCluster
           - Outputs.VpcId
-      TemplateURL: https://s3.amazonaws.com/aws-tut-cf-bucket/5a817b78fe4756bd1e2ad5156d4975f6.template
+      TemplateURL: https://s3.amazonaws.com/aws-1-cf-bucket/5a817b78fe4756bd1e2ad5156d4975f6.template
     Type: AWS::CloudFormation::Stack
   CodePipelineSystem:
     Properties:
@@ -60,7 +60,7 @@ Resources:
           Fn::GetAtt:
           - ECSCluster
           - Outputs.VpcId
-      TemplateURL: https://s3.amazonaws.com/aws-tut-cf-bucket/dd71f32c6eb314f7b1bfa61da03bf96a.template
+      TemplateURL: https://s3.amazonaws.com/aws-1-cf-bucket/678a5eed3de649448d6c4446c55b8933.template
     Type: AWS::CloudFormation::Stack
   ECSCluster:
     Properties:
@@ -73,5 +73,5 @@ Resources:
           Fn::Sub: ${AWS::StackName}-${TeamName}
         KeyName:
           Ref: KeyPair
-      TemplateURL: https://s3.amazonaws.com/aws-tut-cf-bucket/2f915b1f0a269e2ab44062b111edea0f.template
+      TemplateURL: https://s3.amazonaws.com/aws-1-cf-bucket/2f915b1f0a269e2ab44062b111edea0f.template
     Type: AWS::CloudFormation::Stack
