@@ -240,10 +240,30 @@ Outputs:
 
 ### Customize the templates
 
-1. [Fork](https://github.com/awslabs/ecs-refarch-cloudformation#fork-destination-box) this GitHub repository.
+1. [Fork](https://github.com/awstutorials/limits-service) this GitHub repository.
 2. Clone the forked GitHub repository to your local machine.
-3. Modify the templates.
-4. Run createStacks.sh to create the complete infrastructure including the AWS codepipeline
+3. Modify the pipeline template and import the pipeline in the cloudformation
+```
+  BranchName:
+    Description: GitHub branch name
+    Type: String
+    Default: master
+  RepositoryName:
+    Description: GitHub repository name
+    Type: String
+    Default: springbootaws [change this]
+  GitHubOwner:
+    Type: String
+    Default: awstutorial [change this]
+  GitHubSecret:
+    Type: String
+    Default: xxxxxxx [change this]
+    #NoEcho: true
+  GitHubOAuthToken:
+    Type: String
+    Default: xxxxxxx [change this]
+```
+4. Run createStacks.sh to create the complete infrastructure including the pipeline [./createStacks.sh sb1-trial ec2-aws-28minutes 28minutes]
 5. Access the service using the loadbalancer URL.
 
 

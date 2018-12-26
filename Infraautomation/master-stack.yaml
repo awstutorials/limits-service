@@ -18,20 +18,6 @@ Parameters:
         Type: String
 
 Resources:
-    # with default vpc - this is working
-    # ECSCluster:
-    #     Type: AWS::CloudFormation::Stack
-    #     Properties:
-    #         TemplateURL: !Sub https://s3-${AWS::Region}.amazonaws.com/${InfraAutomationCfnBucket}/ecs-cluster.yaml
-    #         Parameters:
-    #             EcsClusterName: !Sub "${AWS::StackName}-ECSCluster"
-    #             EcsInstanceType: "m4.xlarge"
-    #             AsgMaxSize: 2
-    #             VpcId: 'vpc-fd250e99'
-    #             SubnetIds: 'subnet-a618faef,subnet-03d82664'
-    #             VpcAvailabilityZones: 'ap-southeast-1a,ap-southeast-1b'
-    #             EnvironmentName: !Ref AWS::StackName
-    #             KeyName: "mysshkey"
 
     #to create new vpc in 2AZ Reg.
     ECSCluster:
@@ -57,16 +43,16 @@ Resources:
                 ElbSecurityGroup: !GetAtt ECSCluster.Outputs.ElbSecurityGroup
 
     # # pipelines for microservices
-    # CodePipelineSystem:
-    #     Type: AWS::CloudFormation::Stack
-    #     Properties:
-    #         TemplateURL: ./Pipeline.yaml
-    #         Parameters:
-    #             EnvironmentName: !Sub ${AWS::StackName}-${TeamName}
-    #             CodeCommitRepo: "springboot-sample"
-    #             MicroServiceName: "spring-sample"
-    #             CodeBuildContainerSpringBootDocker: !Ref CodeBuildContainerSpringBootDocker
-    #             VpcId: !GetAtt ECSCluster.Outputs.VpcId
-    #             ALBListener: !GetAtt ALB.Outputs.ALBListener
-    #             ECSCluster: !GetAtt ECSCluster.Outputs.ECSCluster
-    #             ECRRepositoryBaseName: !Ref TeamName
+    CodePipelineSystem:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: ./pipeline.yaml
+            Parameters:
+                EnvironmentName: !Sub ${AWS::StackName}-${TeamName}
+                CodeCommitRepo: "springboot-sample"
+                MicroServiceName: "spring-sample"
+                CodeBuildContainerSpringBootDocker: !Ref CodeBuildContainerSpringBootDocker
+                VpcId: !GetAtt ECSCluster.Outputs.VpcId
+                ALBListener: !GetAtt ALB.Outputs.ALBListener
+                ECSCluster: !GetAtt ECSCluster.Outputs.ECSCluster
+                ECRRepositoryBaseName: !Ref TeamName

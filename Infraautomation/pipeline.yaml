@@ -20,17 +20,17 @@ Parameters:
   RepositoryName:
     Description: GitHub repository name
     Type: String
-    Default: springbootaws
+    Default: limits-service
   GitHubOwner:
     Type: String
-    Default: RavisankarCts
+    Default: awstutorials
   GitHubSecret:
     Type: String
     Default: Qazws123@
     #NoEcho: true
   GitHubOAuthToken:
     Type: String
-    Default: 4eaf72470520f9305c6fa23d0e3870d5ae75fd42
+    Default: fb5d878751c359008191f216bb58ef399a0da4b8
     #NoEcho: true
   ApplicationName:
     Description: CodeDeploy application name
