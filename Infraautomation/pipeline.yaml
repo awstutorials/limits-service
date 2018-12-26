@@ -23,14 +23,14 @@ Parameters:
     Default: limits-service
   GitHubOwner:
     Type: String
-    Default: awstutorials
+    Default: [changeit]
   GitHubSecret:
     Type: String
-    Default: Qazws123@
+    Default: [changeit]
     #NoEcho: true
   GitHubOAuthToken:
     Type: String
-    Default: fb5d878751c359008191f216bb58ef399a0da4b8
+    Default: [changeit]
     #NoEcho: true
   ApplicationName:
     Description: CodeDeploy application name

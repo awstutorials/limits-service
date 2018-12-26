@@ -1,50 +1,41 @@
-![build-status](https://codebuild.eu-west-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiKzBuNjJCUFk2STRvbDZENXlMUFJOenF2V2EyQ3FMbEtuWDlQeVp6TWlxdXhNMGVOZGo5bG9jdTl1YU16RmZIVVNxa3VqTVg3V3drSnJxOUQwSmhqV2g0PSIsIml2UGFyYW1ldGVyU3BlYyI6IlJJRE4wZGJaS25LL0s0dzkiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
 
 # Deploying Microservices with Amazon ECS, AWS CloudFormation, and an Application Load Balancer
 
 In this tutorial we are going to deploy a spring boot micro service in to Amazon ECS. We will setup a Amazon ECS cluster from the scratch and deploy the application in to the cluster.
 
-## Overview
+## Scaling Microservices
 
-![infrastructure-overview](images/architecture-overview.png)
+Spring cloud made creating Microservices a breeze. The real problem starts when we have to deploy them and run them in scale. Running a microservice from the eclipse on your local machine is pretty trivial. 
+In various tutorials, you would have seen, creating a Microservice and running in locally. Now to run 100's of Microservices and that too with production capabilities (scaling up and down, fault tolerent) we need a orchestration solution. For orchestration, Kubernetes is a very popular option. AWS support Kubernetes through a solution called EKS (Amazon Elastic Kubernetes Service). It is fairly new service and still not used extensively.
 
-## AWS fundamentals
+The other service available in AWS is AWS ECS (Elastic Container Service). This service allows the developers to develop and deploy Microservices in scale without too much worrying about the orchestration capabilities. 
 
-### VPC
+How ECS works in a Nutshell?
 
-Virtual Private Cloud (VPC) is a way provided by AWS to isolate your infrastructure in the AWS Cloud. When you deploy your infrastructure inside the VPC it is not accessible for anyone outside the VPC. The VPC will have its own IP address range.
+ECS Service : A service represents a scalable functionality in ECS. In simple terms you define how many instances of particular Microservices should be run in the service definition. It uses Task definition for that. The service is responsible for keeping the desired number of instances running at given moment but adding/removing containers. Also this gives the unified entry point for accessing the service. 
 
-### Internet Gateway
-Internet Gateway as the name implies allows systems within VPC to connect to Internet. 
+Task Definition : It represents the exact container image and how much memory should be used for that container among other things.
 
-### NAT Gateway
-You can use a network address translation (NAT) gateway to enable instances in a private subnet to connect to the internet or other AWS services, but prevent the internet from initiating a connection with those instances
+Task : Instance of the task definition.
 
-### Availability Zones
-AWS services are available in multiple regions and each region has few availability zones. An availability zone is a physically seperate datacenter with in the region to enable disaster recovery. This is setup this way to enable customers to keep their data in their region and also to provide disaster recovery. It is important to choose a region closer to your current location for better performance.
+So when we define a ECS service, by giving the container image we want to use, with the number of instances we want to keep running (with minimum and maximum count parameters), AWS creates this service and runs the containers below the service name. So when we access the service url, the ECS service, sends the requests to one of the underlying container instances without the need for knowing how many containers are running and where exactly they are running. 
 
-### Subnets (Public and Private)
-A VPC has one or more subnets. The subnet can be either private or public subnet.Subnet is nothing but a sub network with in the VPC with a specific IP range. Public subnet as the name implies can be accessed from internet through the internet gateway. Private subnet can't be accessed from internet and it can only be accessed by the systems placed in the public subnet. Normally the webservers are placed in the public subnet and database servers are placed in the private subnet. This way only the webserver can access the database and no other systems from the internet can access the database server.
+## Architecture of the sample application
 
-### ALB
-Application load balancer is a load balancing service provided by AWS for applications. 
+![application-architecture-overview](images/targetarchitecture.png)
 
-### ECS Cluster
-ECS cluster is a service provided by AWS to run containers in scale. It is similar to Kubernetes or Docker swarm in comparison.
+### What are the steps in deploying your micro services to AWS ECS
 
-The repository consists of a set of nested templates that deploy the following:
+#### Onetime setup
+1. Setup the VPC, ECS Cluster and Application Load balancer
 
- - A tiered [VPC](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Introduction.html) with public and private subnets, spanning an AWS region.
- - A highly available ECS cluster deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in an [Auto Scaling](https://aws.amazon.com/autoscaling/) group and that are AWS SSM enabled.
- - A pair of [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-gateway.html) (one in each zone) to handle outbound traffic.
- - One microservices deployed as [ECS services](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) (limits-service). 
- - An [Application Load Balancer (ALB)](https://aws.amazon.com/elasticloadbalancing/applicationloadbalancer/) to the public subnets to handle inbound traffic.
- - ALB path-based routes for each ECS service to route the inbound traffic to the correct service.
- - Centralized container logging with [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
-
-## Why use AWS CloudFormation with Amazon ECS?
-
-Using CloudFormation to deploy and manage services with ECS has a number of nice benefits over more traditional methods ([AWS CLI](https://aws.amazon.com/cli), scripting, etc.). 
+#### For each service
+1. Containerize your microservice (using Dockerfile)
+2. Create a buildspec file. This file details the steps in building the application code, creating an image and pushing it to Docker registry
+3. Define ECS service & Task Definition
+4. Create a Codepipeline to build and deploy your image to the ECS cluster. Doing it manually is very time consuming and also error prone.
+4. Deploy your ECS service to the ECS cluster and define the path in the ALB so that, the url request, reaches the right ECS service
+5. Have fun
 
 ### Understand the Microservice
 
@@ -336,4 +327,41 @@ Outputs:
 4. Run createStacks.sh to create the complete infrastructure including the pipeline [./createStacks.sh sb1-trial ec2-aws-28minutes 28minutes]
 5. Access the service using the loadbalancer URL.
 
+## AWS fundamentals
+
+### VPC
+
+Virtual Private Cloud (VPC) is a way provided by AWS to isolate your infrastructure in the AWS Cloud. When you deploy your infrastructure inside the VPC it is not accessible for anyone outside the VPC. The VPC will have its own IP address range.
+
+### Internet Gateway
+Internet Gateway as the name implies allows systems within VPC to connect to Internet. 
+
+### NAT Gateway
+You can use a network address translation (NAT) gateway to enable instances in a private subnet to connect to the internet or other AWS services, but prevent the internet from initiating a connection with those instances
+
+### Availability Zones
+AWS services are available in multiple regions and each region has few availability zones. An availability zone is a physically seperate datacenter with in the region to enable disaster recovery. This is setup this way to enable customers to keep their data in their region and also to provide disaster recovery. It is important to choose a region closer to your current location for better performance.
+
+### Subnets (Public and Private)
+A VPC has one or more subnets. The subnet can be either private or public subnet.Subnet is nothing but a sub network with in the VPC with a specific IP range. Public subnet as the name implies can be accessed from internet through the internet gateway. Private subnet can't be accessed from internet and it can only be accessed by the systems placed in the public subnet. Normally the webservers are placed in the public subnet and database servers are placed in the private subnet. This way only the webserver can access the database and no other systems from the internet can access the database server.
+
+### ALB
+Application load balancer is a load balancing service provided by AWS for applications. 
+
+### ECS Cluster
+ECS cluster is a service provided by AWS to run containers in scale. It is similar to Kubernetes or Docker swarm in comparison.
+
+The repository consists of a set of nested templates that deploy the following:
+
+ - A tiered [VPC](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Introduction.html) with public and private subnets, spanning an AWS region.
+ - A highly available ECS cluster deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in an [Auto Scaling](https://aws.amazon.com/autoscaling/) group and that are AWS SSM enabled.
+ - A pair of [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-gateway.html) (one in each zone) to handle outbound traffic.
+ - One microservices deployed as [ECS services](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) (limits-service). 
+ - An [Application Load Balancer (ALB)](https://aws.amazon.com/elasticloadbalancing/applicationloadbalancer/) to the public subnets to handle inbound traffic.
+ - ALB path-based routes for each ECS service to route the inbound traffic to the correct service.
+ - Centralized container logging with [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
+
+## Why use AWS CloudFormation with Amazon ECS?
+
+Using CloudFormation to deploy and manage services with ECS has a number of nice benefits over more traditional methods ([AWS CLI](https://aws.amazon.com/cli), scripting, etc.). 
 
